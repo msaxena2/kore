@@ -18,13 +18,13 @@ package org.kframework.kore.interfaces
   */
 object tree {
 
-  import pattern._
+  //import pattern._
 
   /**
     * Base type of the Tree interface. [[pattern.Pattern]] extends AST.
     * Represents a Pattern in Matching Logic.
     */
-  sealed trait AST
+  sealed trait AST[T <: AST[T]]
 
 
   /**
@@ -33,15 +33,15 @@ object tree {
     * Allows matching a Pattern against as a Node,
     * and building a Pattern from a list of Patterns.
     */
-  sealed trait Node extends AST with Product {
-    def args: Seq[Pattern]
+  sealed trait Node[T <: AST[T]] extends AST[T] with Product {
+    def args: Seq[T]
 
     /* Allows building Nodes using a list of Patterns */
-    def build(children: Seq[Pattern]): Pattern
+    def build(children: Seq[T]): T
   }
 
   object Node {
-    def unapply(arg: Node): Option[Seq[Pattern]] = Some(arg.args)
+    def unapply(arg: Node[_]): Option[Seq[_]] = Some(arg.args)
   }
 
 
@@ -50,15 +50,15 @@ object tree {
     *
     * @tparam C The Contents of the Leaf.
     */
-  sealed trait Leaf[C] extends AST with Product {
+  sealed trait Leaf[C, T <: AST[T]] extends AST[T] with Product {
     def contents: C
 
     /* Allows building a leaf using its contents */
-    def build(contents: C): Pattern
+    def build(contents: C): T
   }
 
   object Leaf {
-    def unapply[C](arg: Leaf[C]): Option[C] = Some(arg.contents)
+    def unapply[C](arg: Leaf[C, _]): Option[C] = Some(arg.contents)
   }
 
 
@@ -72,16 +72,16 @@ object tree {
     * @tparam CC1 Type of First Field.
     * @tparam CC2 Type of Second Field.
     */
-  sealed trait Leaf2[CC1, CC2] extends Leaf[Product2[CC1, CC2]] with Product2[CC1, CC2] {
+  sealed trait Leaf2[CC1, CC2, T <: AST[T]] extends Leaf[Product2[CC1, CC2], T] with Product2[CC1, CC2] {
     override def contents: Product2[CC1, CC2] = (_1, _2)
 
-    def build(_1: CC1, _2: CC2): Pattern
+    def build(_1: CC1, _2: CC2): T
 
-    override def build(contents: Product2[CC1, CC2]): Pattern = build(contents._1, contents._2)
+    override def build(contents: Product2[CC1, CC2]): T = build(contents._1, contents._2)
   }
 
   object Leaf2 {
-    def unapply[CC1, CC2](arg: Leaf2[CC1, CC2]): Option[(CC1, CC2)] = Some(arg._1, arg._2)
+    def unapply[CC1, CC2](arg: Leaf2[CC1, CC2, _]): Option[(CC1, CC2)] = Some(arg._1, arg._2)
   }
 
 
@@ -90,71 +90,71 @@ object tree {
     *
     * @tparam L Type of Label.
     */
-  sealed trait LabeledNode[L] extends Node with Product1[L] {
-    def build(_1: L, args: Seq[Pattern]): Pattern
+  sealed trait LabeledNode[L, T <: AST[T]] extends Node[T] with Product1[L] {
+    def build(_1: L, args: Seq[T]): T
 
-    override def build(children: Seq[Pattern]): Pattern = build(_1, children)
+    override def build(children: Seq[T]): T = build(_1, children)
   }
 
   object LabeledNode {
-    def unapply[L](arg: LabeledNode[L]): Option[(L, Seq[Pattern])] = Some(arg._1, arg.args)
+    def unapply[L](arg: LabeledNode[L, _]): Option[(L, Seq[_])] = Some(arg._1, arg.args)
   }
 
 
   /**
     * A Node with empty list of Patterns as its args list. [[pattern.Top]], [[pattern.Bottom]] extend this trait.
     */
-  sealed trait Node0 extends Node {
-    override def args = Seq.empty[Pattern]
+  sealed trait Node0[T <: AST[T]] extends Node[T] {
+    override def args = Seq.empty[T]
 
-    def build(): Pattern
+    def build(): T
 
-    override def build(children: Seq[Pattern]): Pattern = {
+    override def build(children: Seq[T]): T = {
       assert(children.isEmpty)
       build()
     }
   }
 
   object Node0 {
-    def unapply(arg: Node0): Boolean = true
+    def unapply(arg: Node0[_]): Boolean = true
   }
 
 
   /**
     * A Node with a single pattern in its args list. Extended by [[pattern.Next]], [[pattern.Not]].
     */
-  sealed trait Node1 extends Node with Product1[Pattern] {
+  sealed trait Node1[T <: AST[T]] extends Node[T] with Product1[T] {
     override def args = Seq(_1)
 
-    def build(_1: Pattern): Pattern
+    def build(_1: T): T
 
-    override def build(children: Seq[Pattern]): Pattern = {
+    override def build(children: Seq[T]): T = {
       assert(children.size == 1)
       build(children.head)
     }
   }
 
   object Node1 {
-    def unapply(arg: Node1): Option[Pattern] = Some(arg._1)
+    def unapply(arg: Node1[_]): Option[_] = Some(arg._1)
   }
 
 
   /**
     * A Node with two Patterns in its args list. Extended by [[pattern.Or]], [[pattern.And]], [[pattern.Implies]], [[pattern.Equals]], [[pattern.Rewrite]].
     */
-  sealed trait Node2 extends Node with Product2[Pattern, Pattern] {
-    def build(_1: Pattern, _2: Pattern): Pattern
+  sealed trait Node2[T <: AST[T]] extends Node[T] with Product2[T, T] {
+    def build(_1: T, _2: T): T
 
     override def args = Seq(_1, _2)
 
-    override def build(children: Seq[Pattern]): Pattern = {
+    override def build(children: Seq[T]): T = {
       assert(children.size == 2)
       build(children.head, children(1))
     }
   }
 
   object Node2 {
-    def unapply(arg: Node2): Option[(Pattern, Pattern)] = Some(arg._1, arg._2)
+    def unapply(arg: Node2[_]): Option[(_, _)] = Some(arg._1, arg._2)
   }
 
 
@@ -164,21 +164,19 @@ object tree {
     * TODO: An extension of Binder Node may be provided in the future, to allow user defined symbols to have binder-like behavior.
     *       These symbols may allow multiple arguments, with the variable bound in some, but not all of them.
     */
-  sealed trait BinderNode extends Node2 {
-    def build(_1: Variable, _2: Pattern): Pattern
+  sealed trait BinderNode[V <: T, T <: AST[T]] extends Node[T] with Product2[V, T] {
+    def build(_1: V, _2: T): T
 
-    override val _1: Variable
+    override def args = Seq(_1, _2)
 
-    override def build(_1: Pattern, _2: Pattern): Pattern = build(_1.asInstanceOf[Variable], _2)
-
-    override def build(children: Seq[Pattern]): Pattern = {
+    override def build(children: Seq[T]): T = {
       assert(children.size == 2)
-      build(children.head.asInstanceOf[Variable], children(1))
+      build(children.head.asInstanceOf[V], children(1))
     }
   }
 
   object BinderNode {
-    def unapply(arg: BinderNode): Option[(Variable, Pattern)] = Some(arg._1, arg._2)
+    def unapply(arg: BinderNode[_, _]): Option[(_, _)] = Some(arg._1, arg._2)
   }
 
 }
@@ -199,7 +197,7 @@ object pattern {
   import tree._
 
   /* ML Pattern Type */
-  sealed trait Pattern extends AST
+  sealed trait Pattern extends AST[Pattern]
 
 
   /**
@@ -213,7 +211,7 @@ object pattern {
     *    - _2 of type [[Sort]].
     *    - build method taking arguments ([[Name]], [[Sort]]) and returning [[Variable]].
     */
-  trait Variable extends Pattern with Leaf2[Name, Sort] {
+  trait Variable extends Pattern with Leaf2[Name, Sort, Pattern] {
     def build(_1: Name, _2: Sort): Variable
   }
 
@@ -242,7 +240,7 @@ object pattern {
     *    - _2 of type [[Value]].
     *    - build method taking arguments ([[Symbol]], [[Value]]) and returning [[DomainValue]].
     */
-  trait DomainValue extends Pattern with Leaf2[Symbol, Value] {
+  trait DomainValue extends Pattern with Leaf2[Symbol, Value, Pattern] {
     def build(_1: Symbol, _2: Value): DomainValue
   }
 
@@ -260,7 +258,7 @@ object pattern {
     * Requires (Implementation for members)
     *    - build method taking arguments () and returning [[Top]].
     */
-  trait Top extends Pattern with Node0 {
+  trait Top extends Pattern with Node0[Pattern] {
     override def build(): Top
   }
 
@@ -278,7 +276,7 @@ object pattern {
     * Requires (Implementation for members)
     *    - build method taking arguments () and returning [[Bottom]].
     */
-  trait Bottom extends Pattern with Node0 {
+  trait Bottom extends Pattern with Node0[Pattern] {
     override def build(): Bottom
   }
 
@@ -298,7 +296,7 @@ object pattern {
     *    - _2 of type [[Pattern]].
     *    - build method taking arguments ([[Pattern]], [[Pattern]]) and returning [[And]].
     */
-  trait And extends Pattern with Node2 {
+  trait And extends Pattern with Node2[Pattern] {
     override def build(_1: Pattern, _2: Pattern): And
   }
 
@@ -318,7 +316,7 @@ object pattern {
     *    - _2 of type [[Pattern]].
     *    - build method taking arguments ([[Pattern]], [[Pattern]]) and returning [[Or]].
     */
-  trait Or extends Pattern with Node2 {
+  trait Or extends Pattern with Node2[Pattern] {
     override def build(_1: Pattern, _2: Pattern): Or
   }
 
@@ -337,7 +335,7 @@ object pattern {
     *    - _1 of type [[Pattern]].
     *    - build method taking argument ([[Pattern]]) and returning [[Not]].
     */
-  trait Not extends Pattern with Node1 {
+  trait Not extends Pattern with Node1[Pattern] {
     override def build(_1: Pattern): Not
   }
 
@@ -354,7 +352,7 @@ object pattern {
     *    - args of type Seq[Pattern].
     *    - build method taking arguments ([[Symbol]], Seq[Pattern]) and returning [[Application]].
     */
-  trait Application extends Pattern with LabeledNode[Symbol] {
+  trait Application extends Pattern with LabeledNode[Symbol, Pattern] {
     override def build(_1: Symbol, args: Seq[Pattern]): Application
   }
 
@@ -374,7 +372,7 @@ object pattern {
     *    - _2 of type [[Pattern]].
     *    - build method taking arguments ([[Pattern]], [[Pattern]]) and returning [[Implies]].
     */
-  trait Implies extends Pattern with Node2 {
+  trait Implies extends Pattern with Node2[Pattern] {
     override def build(_1: Pattern, _2: Pattern): Implies
   }
 
@@ -394,7 +392,7 @@ object pattern {
     *    - _2 of type [[Pattern]].
     *    - build method taking arguments ([[Variable]], [[Pattern]]) and returning [[Exists]].
     */
-  trait Exists extends Pattern with BinderNode {
+  trait Exists extends Pattern with BinderNode[Variable, Pattern] {
     def build(_1: Variable, _2: Pattern): Exists
   }
 
@@ -414,7 +412,7 @@ object pattern {
     *    - _2 of type [[Pattern]].
     *    - build method taking arguments ([[Variable]], [[Pattern]]) and returning [[ForAll]].
     */
-  trait ForAll extends Pattern with BinderNode {
+  trait ForAll extends Pattern with BinderNode[Variable, Pattern] {
     def build(_1: Variable, _2: Pattern): ForAll
   }
 
@@ -433,7 +431,7 @@ object pattern {
     *    - _1 of type [[Pattern]].
     *    - build method taking argument ([[Pattern]]) and returning [[Next]].
     */
-  trait Next extends Pattern with Node1 {
+  trait Next extends Pattern with Node1[Pattern] {
     override def build(_1: Pattern): Next
   }
 
@@ -453,7 +451,7 @@ object pattern {
     *    - _2 of type [[Pattern]].
     *    - build method taking arguments ([[Pattern]], [[Pattern]]) and returning [[Rewrite]].
     */
-  trait Rewrite extends Pattern with Node2 {
+  trait Rewrite extends Pattern with Node2[Pattern] {
     override def build(_1: Pattern, _2: Pattern): Rewrite
   }
 
@@ -473,7 +471,7 @@ object pattern {
     *   - _2 of type [[Pattern]].
     *   - build method taking arguments ([[Pattern]], [[Pattern]]) and returning [[Equals]].
     */
-  trait Equals extends Pattern with Node2 {
+  trait Equals extends Pattern with Node2[Pattern] {
     override def build(_1: Pattern, _2: Pattern): Equals
   }
 
@@ -491,14 +489,17 @@ object outer {
   type Attributes = Seq[p.Pattern]
 
   /**
-    * Trait That is Extended by Every Outer Construct that Attributes.
+    * Trait That is Extended by Every Outer Construct.
     */
-  trait HasAttributes {
+  trait Outer {
     val att: Attributes
+    val sorts: Set[p.Sort]
+    val symbols: Set[p.Symbol]
+    val sentences: Seq[Sentence]
 
-    def onAttributes(f: p.Pattern => p.Pattern): HasAttributes
+    def onAttributes(f: p.Pattern => p.Pattern): Outer
 
-    def getBySymbol(key: p.Symbol): Seq[p.Pattern] = att.collect({ case p.Application(`key`, args) => args }).flatten
+    def getBySymbol(key: p.Symbol): Seq[Seq[p.Pattern]] = att.collect({ case p.Application(`key`, args) => args })
   }
 
 
@@ -512,7 +513,7 @@ object outer {
     *   Requires (Implementation for members)
     *   - modules, a Seq of [[Module]]s
    */
-  trait Definition extends HasAttributes {
+  trait Definition extends Outer {
     val modules: Seq[Module]
 
     // Derived operations
@@ -536,7 +537,7 @@ object outer {
     *   Requires (Implementation for members)
     *   - modules, a Seq of [[Sentence]]s
     */
-  trait Module extends HasAttributes {
+  trait Module extends Outer {
     val name: p.Name
     val sentences: Seq[Sentence]
 
@@ -554,9 +555,10 @@ object outer {
 
   /** Kore Sentence. Extended by [[Import]], [[SymbolDeclaration]], [[SortDeclaration]], [[Axiom]], and [[Rule]]
     */
-  trait Sentence extends HasAttributes {
+  trait Sentence extends Outer {
     lazy val sorts: Set[p.Sort] = Set.empty
     lazy val symbols: Set[p.Symbol] = Set.empty
+    val sentences: Seq[Sentence] = Seq(this)
 
     override def onAttributes(f: p.Pattern => p.Pattern): Sentence
   }

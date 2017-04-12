@@ -101,17 +101,17 @@ object ASTTestUtils {
   }
 
   def renameAllVariables(p: Pattern): Pattern = p match {
-    case n@Node(c: Seq[Pattern]) => n.build(c.map(renameAllVariables))
-    case l@Leaf2(x: Name, y: Sort) => l match {
-      case _: Variable => l.build("#" + x, y)
+    case n:Node[Pattern] => n.build(n.args.map(renameAllVariables))
+    case l:Leaf2[Name, Sort, Pattern] => l match {
+      case _: Variable => l.build("#" + l._1, l._2)
       case other@_ => other
     }
     case other@_ => other
   }
 
   def map(f: Pattern => Pattern)(p: Pattern): Pattern = p match {
-    case n@Node2(p: Pattern, q: Pattern) => n.build(map(f)(p), map(f)(q))
-    case n@Node(c: Seq[AST]) => n.build(c.map(map(f)))
+    case n:Node2[Pattern] => n.build(map(f)(n._1), map(f)(n._2))
+    case n:Node[Pattern] => n.build(n.args.map(map(f)))
     case l@Leaf(_) => f(l)
   }
 
