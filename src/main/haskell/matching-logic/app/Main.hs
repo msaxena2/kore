@@ -1,46 +1,68 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Main where
-import Data.Char(isSpace)
+import Data.Char(isSpace, isAlphaNum)
+
+import qualified Data.Set as Set
+import qualified Data.Map.Strict as Map
+
 import Control.Applicative(some)
 import Control.Monad.IO.Class(liftIO)
 import Control.Monad.State.Strict(StateT,runStateT,MonadState(..))
 import Data.List(isPrefixOf,isSuffixOf)
-import Text.Parsec
-import Text.Parsec.String
+import Text.Megaparsec
+import Text.Megaparsec.Char
 import Data.Text
+
+import Data.Text.Prettyprint.Doc hiding (space)
+import qualified Data.Text.Prettyprint.Doc as Doc
+
+import Data.Reflection
 
 import System.Console.Haskeline
 
 import Kore.MatchingLogic.ProverRepl
 import Kore.MatchingLogic.HilbertProof
-import Kore.MatchingLogic.DummyProofSystem
+import Kore.MatchingLogic.ProofSystem.Minimal
+import Kore.MatchingLogic.ProofSystem.Minimal.Syntax(parseId,parseMLDerivation)
+import Kore.MatchingLogic.AST
+import Kore.MatchingLogic.AST.Syntax
+import Kore.MatchingLogic.Signature.Simple
 
-parseId :: Parser Text
-parseId = pack <$> some (satisfy (\c -> not (isSpace c) && c /= ':'))
+-- Todo: Parsing Formula as Text. Hook to Kore Parser
+parseName :: Parser Text
+parseName = takeWhile1P Nothing isAlphaNum <* space
 
-parseFormula :: Parser Text
-parseFormula =
-  pack <$> some (satisfy (\c -> not (isSpace c) && c /= ':'))
+pCommand :: (Reifies s ValidatedSignature)
+         => Parser (Command Text
+                    (MLRuleSig (SimpleSignature s) Text)
+                    (WFPattern (SimpleSignature s) Text))
+pCommand = parseCommand parseName parseFormula parseRule
+  where
+    parseFormula = simpleSigPattern parseName parseName parseName
+    parseLabel = simpleSigLabel parseName
+    parseSort = simpleSigSort parseName
+    parseRule = parseMLDerivation parseSort parseLabel parseName parseName
 
-parseDerivation :: Parser (DummyRule Text,[Text])
-parseDerivation = do
-  rule <- pack <$> some (satisfy (\c -> not (isSpace c) && c /= ':'))
-  spaces
-  option (DummyRule rule,[]) (do
-    string "from"
-    argIds <- many (spaces *> parseId)
-    return (DummyRule rule,argIds))
 
-pCommand :: Parser (Command Text (DummyRule Text) Text)
-pCommand = parseCommand parseId parseFormula parseDerivation <* eof
-
-{- defaultSettings -}
-
-type ProverState = ()
+proveCommand :: (Reifies sig ValidatedSignature)
+             => proxy (SimpleSignature sig)
+             -> IO (ProverState Text (MLRuleSig (SimpleSignature sig) Text) (WFPattern (SimpleSignature sig) Text))
+proveCommand _ = runProver pCommand (ProverState emptyProof)
 
 banner :: InputT IO ()
 banner = outputStrLn "Welcome to the matching logic prover"
 
+testSignature :: SignatureInfo
+testSignature = MkSignatureInfo
+  { sorts = Set.fromList ["Nat","Bool"]
+  , labels = Map.fromList [("plus",("Nat",["Nat","Nat"]))
+                          ,("succ",("Nat",["Nat"]))
+                          ,("zero",("Nat",[]))
+                          ]
+  }
+
 main :: IO ()
-main = do
-  runProver pCommand (ProverState emptyProof)
-  return ()
+main = case validate testSignature of
+  Nothing -> return ()
+  Just validSig -> reifySignature validSig (\proxy -> proveCommand proxy >> return ())

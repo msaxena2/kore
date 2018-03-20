@@ -13,12 +13,13 @@ import qualified Data.Map.Strict as Map
 import Data.Sequence(Seq,(|>))
 import qualified Data.Sequence as Seq
 import Data.Foldable
+import Data.Text.Prettyprint.Doc
 
 data Proof ix rule formula =
   Proof
   { index :: Map ix (Int,formula)
   , claims :: Seq (ix,formula)
-  , derivations :: Map ix (rule,[(ix,formula)])
+  , derivations :: Map ix (rule ix)
   }
   deriving (Show)
 
@@ -35,31 +36,30 @@ add proof ix formula
           }
   | otherwise = Nothing
 
-renderProof :: (Ord ix, Show ix, Show rule, Show formula)
-            => Proof ix rule formula -> String
-renderProof proof = unlines
-  [show ix++" : "++show formula++
+renderProof :: (Ord ix, Pretty ix, Pretty (rule ix), Pretty formula)
+            => Proof ix rule formula -> Doc ann
+renderProof proof = vcat
+  [pretty ix<+>colon<+>pretty formula<>
    case Map.lookup ix (derivations proof) of
-     Nothing -> ""
-     Just (rule,[]) -> " by "++show rule
-     Just (rule,arguments) -> " by "++show rule++" from "++
-       unwords (map (show . fst) arguments)
+     Nothing -> emptyDoc
+     Just rule -> emptyDoc<+>pretty "by"<+>pretty rule
   | (ix,formula) <- toList (claims proof)]
 
-class Eq formula => ProofSystem rule formula | rule -> formula where
-  checkDerivation :: rule -> formula -> [formula] -> Bool
+class (Traversable rule, Eq formula) => ProofSystem rule formula | rule -> formula where
+  checkDerivation :: formula -> rule formula -> Bool
 
 derive :: (Ord ix, ProofSystem rule formula)
        => Proof ix rule formula
-       -> ix -> formula -> rule -> [(ix,formula)]
+       -> ix -> formula -> rule ix
        -> Maybe (Proof ix rule formula)
-derive proof ix f rule arguments = do
-  let checkOffset (name,formula) =
-        do (offset,formula') <- Map.lookup name (index proof)
-           guard (formula == formula')
-           return offset
-  offset <- checkOffset (ix,f)
+derive proof ix f rule = do
   guard $ not (Map.member ix (derivations proof))
-  guard $ all (maybe False (< offset) . checkOffset) arguments
-  guard $ checkDerivation rule f (map snd arguments)
-  return (proof { derivations = Map.insert ix (rule,arguments) (derivations proof) })
+  (offset,conclusion) <- Map.lookup ix (index proof)
+  guard (conclusion == f)
+  let resolveIx name = do
+        (offset',formula') <- Map.lookup name (index proof)
+        guard (offset' < offset)
+        return formula'
+  resolvedRule <- traverse resolveIx rule
+  guard $ checkDerivation conclusion resolvedRule
+  return (proof { derivations = Map.insert ix rule (derivations proof) })

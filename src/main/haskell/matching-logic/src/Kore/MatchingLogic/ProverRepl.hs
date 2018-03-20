@@ -1,22 +1,26 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Kore.MatchingLogic.ProverRepl where
-import Kore.MatchingLogic.HilbertProof
+import           Kore.MatchingLogic.HilbertProof
 
-import System.Console.Haskeline
-import Control.Monad.IO.Class(liftIO)
-import Control.Monad.State.Strict(StateT,execStateT,MonadState(..),modify')
-import Control.Monad.Trans(MonadTrans(lift))
-import qualified Data.Map.Strict as Map
-import Data.List(isPrefixOf,isSuffixOf)
-import Data.Text(Text,pack)
-import Text.Parsec
-import Text.Parsec.String
+import           Control.Monad.IO.Class          (liftIO)
+import           Control.Monad.State.Strict      (MonadState (..), StateT,
+                                                  execStateT, modify')
+import           Control.Monad.Trans             (MonadTrans (lift))
+import           Data.List                       (isPrefixOf, isSuffixOf)
+import qualified Data.Map.Strict                 as Map
+import           Data.Text                       (Text, pack)
+import           Data.Void
+import           System.Console.Haskeline
+import           Text.Megaparsec
+import           Text.Megaparsec.Char
+import           Data.Text.Prettyprint.Doc(Pretty(pretty),(<+>),colon)
 
 newtype ProverState ix rule formula =
   ProverState (Proof ix rule formula)
 
 data Command id rule formula =
    Add id formula
- | Derive id formula rule [id]
+ | Derive id formula (rule id)
  deriving Show
 
 applyCommand :: (Ord id, ProofSystem rule formula)
@@ -24,45 +28,51 @@ applyCommand :: (Ord id, ProofSystem rule formula)
              -> Proof id rule formula
              -> Maybe (Proof id rule formula)
 applyCommand command proof = case command of
-  Add id f -> add proof id f
-  Derive id f rule argIds -> do
-    argTerms <- traverse (\ix -> fmap snd (Map.lookup ix (index proof))) argIds
-    derive proof id f rule (zip argIds argTerms)
+  Add id f         -> add proof id f
+  Derive id f rule -> derive proof id f rule
 
-parseCommand :: Parser id -> Parser formula -> Parser (rule,[id]) -> Parser (Command id rule formula)
+type Parser = Parsec Void Text
+
+parseCommand :: Parser id -> Parser formula -> Parser (rule id) -> Parser (Command id rule formula)
 parseCommand pId pFormula pDerivation = do
   id <- pId
-  spaces
+  space
   char ':'
-  spaces
+  space
   formula <- pFormula
-  spaces
+  space
   option (Add id formula)
     (do string "by"
-        spaces
-        (rule,argIds) <- pDerivation
-        return (Derive id formula rule argIds))
+        space
+        rule <- pDerivation
+        return (Derive id formula rule))
 
-runProver :: (Ord ix, ProofSystem rule formula, Show ix, Show rule, Show formula)
+instance (Pretty id, Pretty formula, Pretty (rule id)) => Pretty (Command id rule formula) where
+  pretty (Add id formula) = pretty id<+>colon<+>pretty formula
+  pretty (Derive id formula rule) = pretty id<+>colon<+>pretty formula<+>pretty("by"::Text)<+>pretty rule
+
+runProver :: (Ord ix, ProofSystem rule formula, Pretty ix, Pretty (rule ix), Pretty formula)
           => Parser (Command ix rule formula)
           -> ProverState ix rule formula
           -> IO (ProverState ix rule formula)
 runProver pCommand initialState =
-  execStateT (runInputT defaultSettings startRepl) initialState
- where
-   startRepl = outputStrLn "Matching Logic prover started" >> repl
-   repl = do
-     mcommand <- getInputLine ">>> "
-     case mcommand of
-       Just command -> case parse pCommand "<stdin>" command of
-         Left err -> outputStrLn (show err) >> repl
-         Right cmd -> do
-           outputStrLn (show cmd)
-           ProverState state <- lift get
-           case applyCommand cmd state of
-             Just state' -> do
-               lift (put (ProverState state'))
-               outputStrLn (renderProof state')
-               repl
-             Nothing -> outputStrLn "command failed" >> repl
-       Nothing -> return ()
+    execStateT (runInputT defaultSettings startRepl) initialState
+  where
+    startRepl = outputStrLn "Matching Logic prover started" >> repl
+    repl = do
+      mcommand <- getInputLine ">>> "
+      case mcommand of
+        Just "" -> do ProverState state <- lift get
+                      outputStrLn (show (renderProof state))
+                      repl
+        Just command -> case parse pCommand "<stdin>" (pack command) of
+          Left err -> outputStrLn (parseErrorPretty err) >> repl
+          Right cmd -> do
+            ProverState state <- lift get
+            case applyCommand cmd state of
+              Just state' -> do
+                lift (put (ProverState state'))
+                outputStrLn (show (renderProof state'))
+                repl
+              Nothing -> outputStrLn "command failed" >> repl
+        Nothing -> return ()
