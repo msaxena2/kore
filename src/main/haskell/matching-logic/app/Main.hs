@@ -1,5 +1,5 @@
 module Main where
-import Data.Char(isSpace)
+import Data.Char(isSpace, isAlphaNum)
 import Control.Applicative(some)
 import Control.Monad.IO.Class(liftIO)
 import Control.Monad.State.Strict(StateT,runStateT,MonadState(..))
@@ -13,25 +13,12 @@ import System.Console.Haskeline
 import Kore.MatchingLogic.ProverRepl
 import Kore.MatchingLogic.HilbertProof
 import Kore.MatchingLogic.DummyProofSystem
+import Kore.MatchingLogic.MLProofSystem
+import Kore.MatchingLogic.MLProofSystemParsers(parseId,parseFormula,parseMLDerivation)
 
-parseId :: Parser Text
-parseId = pack <$> some (satisfy (\c -> not (isSpace c) && c /= ':'))
-
-parseFormula :: Parser Text
-parseFormula =
-  pack <$> some (satisfy (\c -> not (isSpace c) && c /= ':'))
-
-parseDerivation :: Parser (DummyRule Text,[Text])
-parseDerivation = do
-  rule <- pack <$> some (satisfy (\c -> not (isSpace c) && c /= ':'))
-  spaces
-  option (DummyRule rule,[]) (do
-    string "from"
-    argIds <- many (spaces *> parseId)
-    return (DummyRule rule,argIds))
-
-pCommand :: Parser (Command Text (DummyRule Text) Text)
-pCommand = parseCommand parseId parseFormula parseDerivation <* eof
+-- Todo: Parsing Formula as Text. Hook to Kore Parser
+pCommand :: Parser (Command Text MLRule Text)
+pCommand = parseCommand parseId parseFormula parseMLDerivation <* eof
 
 {- defaultSettings -}
 
