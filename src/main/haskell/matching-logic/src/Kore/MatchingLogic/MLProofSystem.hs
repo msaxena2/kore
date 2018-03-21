@@ -6,17 +6,18 @@ import Data.Text
 type Pattern = Text
 type Var = Text
 type Symbol = Text
+type Id = Text
 
 data MLRule =
    Propositional1 Pattern Pattern
  | Propositional2 Pattern Pattern Pattern
  | Propositional3 Pattern Pattern
- | ModusPonens Pattern Pattern -- ix ix
- | Generalization Var Pattern -- Var ix
+ | ModusPonens Id Id -- ix ix
+ | Generalization Var Id -- Var ix
  | VariableSubstitution Var Var Pattern
  | Forall Var Pattern Pattern
- | Necessitation Symbol Int Pattern --Symbol Int ix
- | PropagateOr Symbol Int Pattern Pattern
+ | Necessitation Symbol Int Id --Symbol Int ix
+ | PropagateOr Symbol Int Var Pattern
      -- ^ sigma(before ..,\phi1 \/ \phi2,.. after) <->
      --     sigma(before ..,\phi1, .. after) <-> sigma(before ..,\phi2,.. after)
  | PropagateExists Symbol Int Var Pattern
