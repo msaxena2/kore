@@ -2,9 +2,10 @@ module Kore.MatchingLogic.MLProofSystem where
 import Kore.MatchingLogic.HilbertProof
 import Data.Text
 
-type Pattern = ()
+-- Todo: Hook pattern parser
+type Pattern = Text
 type Var = Text
-type Symbol = ()
+type Symbol = Text
 
 data MLRule =
    Propositional1 Pattern Pattern
@@ -15,7 +16,7 @@ data MLRule =
  | VariableSubstitution Var Var Pattern
  | Forall Var Pattern Pattern
  | Necessitation Symbol Int Pattern --Symbol Int ix
- | PropagatenOr Symbol Int Pattern Pattern
+ | PropagateOr Symbol Int Pattern Pattern
      -- ^ sigma(before ..,\phi1 \/ \phi2,.. after) <->
      --     sigma(before ..,\phi1, .. after) <-> sigma(before ..,\phi2,.. after)
  | PropagateExists Symbol Int Var Pattern
@@ -23,6 +24,13 @@ data MLRule =
  | Existence Var
      -- ^ Ex x.x
  | Singvar Var Pattern [Int] [Int]
+    deriving Show
 
 instance ProofSystem MLRule Pattern where
   checkDerivation _ _ _ = True
+
+-- Todo: Replace with actual unparsing
+-- instance Show MLRule where
+--     show rule = case rule of
+--                     (Propositional1 p1 p2)    -> "propositional1(" ++ (show p1) ++ ","  ++ (show p2) ++ ")"
+--                     (Propositional2 p1 p2 p3) -> "propositional2(" ++ (show p1) ++ ","  ++ (show p2) ++ (show p3) ++ ")"
