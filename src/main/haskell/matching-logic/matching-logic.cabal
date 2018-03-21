@@ -45,6 +45,7 @@ library
     , Kore.MatchingLogic.DummyProofSystem
     , Kore.MatchingLogic.ProverRepl
     , Kore.MatchingLogic.MLProofSystem
+    , Kore.MatchingLogic.MLProofSystemParsers
   default-language: Haskell2010
   default-extensions: DataKinds
                     , DeriveFunctor
