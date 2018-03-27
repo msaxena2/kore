@@ -1,4 +1,11 @@
 {-# LANGUAGE TypeFamilies #-}
+{-|
+Description: A signature for the meta-level Kore terms.
+
+Defines a signature for the meta-level Kore terms, but
+currently does not have space for the added symbols that
+will be introduced by lifting object-level definitions.
+-}
 module Kore.MatchingLogic.Signature.MetaK where
 import Kore.MatchingLogic.AST(IsSignature)
 import qualified Kore.MatchingLogic.AST as AST

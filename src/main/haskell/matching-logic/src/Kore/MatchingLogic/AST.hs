@@ -3,6 +3,14 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-|
+Description: A type of matching logic patterns
+
+A type of matching logic patterns.
+This implements exactly the syntax of matching logic patterns,
+without the provisions in language-kore for handling the
+surface syntax of Kore such as mixed object-level and meta-level terms.
+-}
 module Kore.MatchingLogic.AST
   ( PatternF(..)
   , Pattern

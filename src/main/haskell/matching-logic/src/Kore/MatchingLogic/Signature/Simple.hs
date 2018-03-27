@@ -5,6 +5,17 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RankNTypes #-}
+{-|
+Description: A generic signature for finite sets of simply-sorted labels
+
+A generic signature for finite sets of simply-sorted labels.
+This uses the reflection package to allow any set of string
+sort names, string label names, and label signatures to
+be used as an 'IsSignature' instance, on a type of the
+form 'SimpleSignature s'.
+Functions are also provided to check and convert strings
+to the 'Label' or 'Sort' types associated with that signature.
+-}
 module Kore.MatchingLogic.Signature.Simple
   (SignatureInfo(..),SimpleSignature
   ,ValidatedSignature,fromValidated,validate,reifySignature

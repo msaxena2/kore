@@ -1,4 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-|
+Description: A simple textual interface for building a proof
+
+A simple textual interface for building a proof, offering commands
+directly corresponding to the 'Kore.MatchingLogic.HilbertProof' API.
+Parsers must be provided for the formulas, rules, and labels of
+a particular instance of 'HilbertProof'.
+-}
 module Kore.MatchingLogic.ProverRepl where
 import           Kore.MatchingLogic.HilbertProof
 

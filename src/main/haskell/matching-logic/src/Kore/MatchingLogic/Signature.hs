@@ -1,4 +1,12 @@
 {-# LANGUAGE TypeFamilies #-}
+{-|
+Description: A type class for matching logic signatures
+
+Defines a type class for matching logic signatures.
+Data families 'Label' and 'Sort' indexed by the signature type
+give the labels and sorts of a signature. The class methods
+allow looking up the argument and result sorts of a label.
+-}
 module Kore.MatchingLogic.Signature where
 
 class IsSignature sig where

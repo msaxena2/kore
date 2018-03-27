@@ -5,6 +5,19 @@
 {-# LANGUAGE TypeApplications     #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-|
+Description: A generic signature for parameterized sorts and labels
+
+A generic signature for parameterized sorts and labels.
+This uses the reflection package to provide a type with
+an 'IsSignature' instance from a set of textual label
+and sort names, along with the number of parameters of
+each sort and the number of sort parameters
+and a parameterized signature for each label.
+Functions are also provided to check and convert trees
+over strings into the 'Label' or 'Sort' types associated
+with that signature.
+-}
 module Kore.MatchingLogic.Signature.Poly
   (SignatureInfo(..),PolySignature) where
   -- ,ValidatedSignature,fromValidated,findLabel) where

@@ -1,5 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE GADTs #-}
+{- |
+Description: Parser and printer for matching logic patterns, using a subset of Kore syntax.
+
+Parser and pretty-printer for the matching logic pattern types in
+'Kore.MatchingLogic.AST'.
+This module uses a subset of the concrete syntax of Kore,
+such as `\and{Bool}(A:Bool,B:Bool)` for a simple disjunction of variables.
+-}
 module Kore.MatchingLogic.AST.Syntax
   ( mlPattern
   , prettyPat

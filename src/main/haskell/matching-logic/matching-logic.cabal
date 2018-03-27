@@ -55,7 +55,6 @@ library
                  , Kore.MatchingLogic.ProofSystem.Minimal
                  , Kore.MatchingLogic.ProofSystem.Minimal.Syntax
                  , Kore.MatchingLogic.ProofSystem.Dummy
-                 , Kore.MatchingLogic.ProofSystem.Large
                  , Kore.MatchingLogic.ProverRepl
                  , Kore.MatchingLogic.Signature
                  , Kore.MatchingLogic.Signature.Simple

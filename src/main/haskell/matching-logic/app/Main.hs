@@ -24,7 +24,7 @@ import System.Console.Haskeline
 import Kore.MatchingLogic.ProverRepl
 import Kore.MatchingLogic.HilbertProof
 import Kore.MatchingLogic.ProofSystem.Minimal
-import Kore.MatchingLogic.ProofSystem.Minimal.Syntax(parseId,parseMLDerivation)
+import Kore.MatchingLogic.ProofSystem.Minimal.Syntax(parseId,parseMLRuleSig)
 import Kore.MatchingLogic.AST
 import Kore.MatchingLogic.AST.Syntax
 import Kore.MatchingLogic.Signature.Simple
@@ -42,7 +42,7 @@ pCommand = parseCommand parseName parseFormula parseRule
     parseFormula = simpleSigPattern parseName parseName parseName
     parseLabel = simpleSigLabel parseName
     parseSort = simpleSigSort parseName
-    parseRule = parseMLDerivation parseSort parseLabel parseName parseName
+    parseRule = parseMLRuleSig parseSort parseLabel parseName parseName
 
 
 proveCommand :: (Reifies sig ValidatedSignature)

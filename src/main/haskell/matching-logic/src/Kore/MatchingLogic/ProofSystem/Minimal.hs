@@ -1,12 +1,26 @@
+{-|
+Description: The minimal matching logic proof system
+
+This module defines the minimal matching logic proof system,
+which does not assume the existence of a definedness symbol).
+ -}
 module Kore.MatchingLogic.ProofSystem.Minimal where
 import           Data.Text
 import           Kore.MatchingLogic.AST             as AST
 import           Kore.MatchingLogic.HilbertProof
 import Data.Functor.Foldable(Fix(..))
 
-type Var = Text
-type Id = Text
-
+{-|
+  This type has constructors for each rule of the
+  proof system.
+  It is parameterized over the exact types of parts of patterns
+  to allow working with different signatures or implementations.
+  The 'term' parameter is used where the rule must be written
+  with a literal pattern.
+  'hypothesis' refers to hypotheses of a proof rule, it can be
+  instantiated with names of the hypotheses or with the actual
+  formulas giving the conclusions of those hypotheses.
+ -}
 data MLRule sort label var term hypothesis =
    Propositional1 term term
  | Propositional2 term term term
@@ -26,6 +40,8 @@ data MLRule sort label var term hypothesis =
  | Singvar var term [Int] [Int]
  deriving (Functor, Foldable, Traversable, Show)
 
+-- | The 'MLRuleSig' synonym instantiates 'MLRule' to use
+-- the sorts, labels, and patterns from the 'IsSignature' instance 'sig'
 type MLRuleSig sig var = MLRule (Sort sig) (Label sig) var (SigPattern sig var)
 
 notPat :: (IsSignature sig)
@@ -42,6 +58,8 @@ patSort :: (IsSignature sig)
         => SigPattern sig v -> Sort sig
 patSort (Fix pat) = patternSort pat
 
+-- | This instance is currently incomplete, it correctly checks
+-- uses of propositional1 and propositional2 but rejects any other rules.
 instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
          ProofSystem (MLRuleSig sig var) (WFPattern sig var) where
   checkDerivation conclusion rule = case rule of
@@ -57,9 +75,3 @@ instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
                statement = implies s phi1 (implies s phi2 phi1)
            in fromWFPattern conclusion == statement
     _ -> False
-
--- Todo: Replace with actual unparsing
--- instance Show MLRule where
---     show rule = case rule of
---                     (Propositional1 p1 p2)    -> "propositional1(" ++ (show p1) ++ ","  ++ (show p2) ++ ")"
---                     (Propositional2 p1 p2 p3) -> "propositional2(" ++ (show p1) ++ ","  ++ (show p2) ++ (show p3) ++ ")"
