@@ -92,6 +92,8 @@ test-suite test
     , tasty-quickcheck
     , text
     , megaparsec
+    , prettyprinter
   other-modules:
-      RuleParserTests
+        RuleParserTests
+      , TestUtils
   default-language: Haskell2010
