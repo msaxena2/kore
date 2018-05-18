@@ -31,7 +31,7 @@ noParameterObjectSortAndSentence name =
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
             }
-        :: KoreSentenceSort
+              :: KoreSentenceSort Object
         )
     )
 
