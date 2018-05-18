@@ -11,6 +11,8 @@ import           Text.Megaparsec.Char
 
 import           Kore.MatchingLogic.ProofSystem.ProofAssistantTest
 import           RuleParserTests
+import           Kore.MatchingLogic.ProofSystem.TestProofs
+
 
 main :: IO ()
 main =
@@ -31,6 +33,7 @@ unitTests =
         " Unit Tests"
         [ proofAssistantTests
         , parserUnitTests
+        , onePlusOneProofTest
         ]
 
 

@@ -60,10 +60,10 @@ import           Data.Text.Prettyprint.Doc
 import           Kore.MatchingLogic.Signature
 
 -- | The base functor of patterns
-data PatternF sort -- ^ The type of sorts
-              label -- ^ The type of labels (sometimes used for aliases as well as symbols)
-              v -- ^ The type of variables
-              p -- ^ The the type of subterms
+data PatternF sort --  The type of sorts
+              label --  The type of labels (sometimes used for aliases as well as symbols)
+              v --  The type of variables
+              p --  The the type of subterms
   = Variable sort v
   | Application label [p]
   | And sort p p
@@ -112,7 +112,7 @@ newtype WFPattern sig var = WFPattern {fromWFPattern :: SigPattern sig var}
 deriving instance (Eq (Sort sig), Eq (Label sig), Eq var) => Eq (WFPattern sig var)
 deriving instance (Show (Sort sig), Show (Label sig), Show var) => Show (WFPattern sig var)
 deriving instance (Pretty (SigPatternF sig var (SigPattern sig var)))
-                  -- ^ expanded according to Pretty (f (Fix f)) => Pretty (Fix f)
+                  --  expanded according to Pretty (f (Fix f)) => Pretty (Fix f)
                   -- to avoid warning
                 => Pretty (WFPattern sig var)
 

@@ -105,4 +105,5 @@ test-suite test
   other-modules: Kore.MatchingLogic.ProofSystem.ProofAssistantTest
                , RuleParserTests
                , TestUtils
+               , Kore.MatchingLogic.ProofSystem.TestProofs
   default-language: Haskell2010
