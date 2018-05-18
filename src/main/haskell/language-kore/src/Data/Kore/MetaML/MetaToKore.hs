@@ -65,6 +65,11 @@ sentenceMetaToKore (SentenceAxiomSentence msx) = asSentence SentenceAxiom
         map UnifiedMeta (sentenceAxiomParameters msx)
     }
 
+sentenceMetaToKore (SentenceSortSentence msts) = asSentence msts
+    { sentenceSortAttributes =
+        attributesMetaToKore (sentenceSortAttributes msts)
+    }
+
 moduleMetaToKore :: MetaModule -> KoreModule
 moduleMetaToKore mm = Module
     { moduleName = moduleName mm
