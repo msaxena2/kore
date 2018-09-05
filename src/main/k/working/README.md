@@ -6,3 +6,7 @@ little effort from the execution engine:
 - `imp-monosorted`:
   IMP without any subsorting, with user-defined (functional) state,
   and user-defined strictness.
+
+To run these demos, build `K` and place it in `$PATH`. Next, use `make`
+to run the tests.
+
