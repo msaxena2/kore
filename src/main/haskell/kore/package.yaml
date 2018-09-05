@@ -136,8 +136,13 @@ executables:
     dependencies:
       - kore
 
+  kore-play
+    main: Main.hs
+    source-dirs:
+      - app/play
+
 tests:
-  kore-test:
+      kore-test:
     main: Driver.hs
     source-dirs:
       - test
